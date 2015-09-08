@@ -4,5 +4,5 @@ import json
 import zoho
 
 api = falcon.API()
-sugar = zoho.Zoho()
-api.add_route('/', zoho)
+zoho = zoho.Zoho()
+api.add_route('/zoho/tasks', zoho)
