@@ -40,9 +40,10 @@ class zoho_collect_tickets:
 
         params = {}
         params.update({
-            'portal' : self.zoho_portal,
-            'department' : self.zoho_department,
-            'authtoken' : self.zoho_token
+            'portal'    : self.zoho_portal,
+            'department': self.zoho_department,
+            'authtoken' : self.zoho_token,
+            'newFormat' : 2,
         })
 
         if(request_params):
