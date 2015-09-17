@@ -1,44 +1,61 @@
-import falcon
+import rethinkdb as r
 import json
-import rethinkdb as rdb
 import requests
+import sys
+import datetime
 
-import config
+class zoho_collect_tickets:
 
-class Zoho:
+    def __init__(self, **kwargs):
 
-    def _send(self, request_params=None):
-        """Request crafting method"""
+        self.init_zoho(kwargs)
+
+
+    def init_zoho(self, kwargs):
+        """Constructor for zoho"""
+
+        self.last_time = datetime.datetime.now() - \
+                datetime.timedelta( \
+                    minutes=kwargs.get('zoho_last_time', 15) \
+                )
+        self.last_time = self.last_time.strftime("%Y-%m-%d %H:%M:%S")
+
+        self.zoho_url = "https://support.zoho.com/api/json/"
+        self.zoho_portal = kwargs['zoho_portal']
+        self.zoho_department = kwargs['zoho_department']
+        self.zoho_token = kwargs['zoho_token']
+
+
+    def send(self, url, request_params=None):
+        """Crafting request and send it"""
 
         params = {}
-        params.update(config.zoho_params)
+        params.update({
+            # NEVER SPECIFY PARAMS IN CAMELCASE! IT DOESN'T WORK!
+            'portal'    : self.zoho_portal,
+            'department': self.zoho_department,
+            'authtoken' : self.zoho_token,
+            'scope'     : 'crmapi',
+            'newformat' : 2,
+        })
 
         if(request_params):
             params.update(request_params)
 
-        r = requests.get(config.zoho_url+"requests/getrecords", params=params)
-        return r.text
-
-
-    def _get_tasks(self):
-        """Get all available tasks"""
-        return self._send()
-
-
-    def on_get(self, req, resp):
-
-        resp.body = self._get_tasks()
-        resp.status = falcon.HTTP_200
-
-        """
         try:
-            rdb.connect(config.rethinkdb_host, config.rethinkdb_port).repl()
-            data = { 'info': 'success'}
+            return requests.get(self.zoho_url+url, params=params)
         except Exception as e:
-            data = { 'error': str(e) }
-        """
-
-        #resp.body = json.dumps(data)
+            logger.error("Can't connect to Zoho: "+str(e))
+            sys.exit(1)
 
 
+    def get_all_tickets(self):
+        """Get all Zoho tickets"""
+        return self.send('cases/getrecords')
+
+
+    def get_recent_tickets(self):
+        """Get recently updated tickets"""
+        return self.send('cases/getrecords', \
+                {'lastmodifiedtime': self.last_time})
 

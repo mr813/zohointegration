@@ -1,28 +1,31 @@
-import falcon
+import rethinkdb as rdb
+from requests.auth import HTTPBasicAuth
 import requests
+import json
 
-import config
+class jira:
 
-class Jira:
+    def __init__(self, **kwargs):
+        self.init_jira(kwargs)
+        pass
 
-    def _send(self, request_params=None):
-        """Request crafting method"""
+
+    def init_jira(self, kwargs):
+        """Constructor for Jira"""
+
+        self.jira_url = "https://icucsolutions.atlassian.net/rest/api/2/"
+        self.jira_user =  kwargs['jira_user']
+        self.jira_password = kwargs['jira_password']
+
+
+    def send(self, request_params=None):
+        """Crafting request and send it"""
 
         params = {}
-        params.update(config.zoho_params)
 
-        if(request_params):
-            params.update(request_params)
+        try:
+            return requests.get(self.jira_url+"search", params=params,  auth=HTTPBasicAuth(self.jira_user, self.jira_password))
+        except Exception as e:
+            print("Can't connect to Jira: "+str(e))
 
-        r = requests.get(config.zoho_url+"requests/getrecords", params=params)
-        return r.text
-        """Request crafting method"""
 
-        params = {}
-        params.update(config.zoho_params)
-
-        if(request_params):
-            params.update(request_params)
-
-        r = requests.get(config.zoho_url+"requests/getrecords", params=params)
-        return r.text
