@@ -31,15 +31,18 @@ class zoho_collect_tickets:
 
         params = {}
         params.update({
+            # NEVER SPECIFY PARAMS IN CAMELCASE! IT DOESN'T WORK!
             'portal'    : self.zoho_portal,
             'department': self.zoho_department,
             'authtoken' : self.zoho_token,
             'scope'     : 'crmapi',
-            'newFormat' : 2,
+            'newformat' : 2,
         })
 
         if(request_params):
             params.update(request_params)
+
+        print(params)
 
         try:
             return requests.get(self.zoho_url+url, params=params)
@@ -57,5 +60,5 @@ class zoho_collect_tickets:
         """Get recently updated tickets"""
         print(self.last_time)
         return self.send('cases/getrecords', \
-                {'lastModifiedTime': self.last_time})
+                {'lastmodifiedtime': self.last_time})
 
