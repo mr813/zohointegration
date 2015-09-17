@@ -21,7 +21,7 @@ class zoho_to_jira:
     def init_zoho(self, kwargs):
         self.zoho = zoho.zoho_collect_tickets(
             zoho_portal='icontrolusa',
-            zoho_department='SBT-Client Services',`
+            zoho_department='SBT-Client Services',
             zoho_token='5e32980f1c7513f0f6dcc9247d21f37a',
             zoho_last_time=300
         )
