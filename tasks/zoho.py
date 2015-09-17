@@ -42,8 +42,6 @@ class zoho_collect_tickets:
         if(request_params):
             params.update(request_params)
 
-        print(params)
-
         try:
             return requests.get(self.zoho_url+url, params=params)
         except Exception as e:
@@ -58,7 +56,6 @@ class zoho_collect_tickets:
 
     def get_recent_tickets(self):
         """Get recently updated tickets"""
-        print(self.last_time)
         return self.send('cases/getrecords', \
                 {'lastmodifiedtime': self.last_time})
 

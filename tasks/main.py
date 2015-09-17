@@ -5,7 +5,7 @@ import sys
 import logging
 logging.basicConfig( \
         format='[%(levelname)8s] [%(asctime)s] [%(name)s] %(message)s', \
-        level=logging.DEBUG \
+        level=logging.INFO \
 )
 logger = logging.getLogger(__name__)
 
@@ -35,17 +35,17 @@ class zoho_to_jira:
         self.r_table = kwargs['r_table']
 
         try: # Quit if couldn't connect to db
-            logger.debug('Connecting to rethinkdb...')
+            logger.info('Connecting to rethinkdb...')
             r.connect(self.r_host, self.r_port).repl()
         except Exception as e:
             logger.error('Connecting to rethinkdb failed! '+str(e))
             sys.exit(1)
 
         try: # If db or table created, ignore it.
-            logger.debug('Creating database...')
+            logger.info('Creating database...')
             r.db_create(self.r_db).run()
 
-            logger.debug('Creating table...')
+            logger.info('Creating table...')
             r.db(self.r_db).table_create(self.r_table).run()
         except Exception as e:
             logger.warning('Already created')
@@ -84,7 +84,14 @@ class zoho_to_jira:
         if result is not None:
             logger.info('Getting recent zoho tickets...')
             data = self.zoho.get_recent_tickets()
-            print(json.dumps(data.json(), indent=4))
+            try:
+                if data.json()['response']['error']['code'] == 4832:
+                    logger.info('Nothing to sync :}')
+            except:
+                logger.info('There new data to sync :}')
+                self.save_all_tickets(data)
+
+
         else:
             logger.info('Seems to be table is empty, fetching all zoho tickets...')
             data = self.zoho.get_all_tickets()
