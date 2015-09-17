@@ -28,12 +28,14 @@ class jira:
 
         pass
 
+
     def init_jira(self, kwargs):
         """Constructor for Jira"""
 
         self.jira_url = "https://icucsolutions.atlassian.net/rest/api/2/"
         self.jira_user =  kwargs['jira_user']
         self.jira_password = kwargs['jira_password']
+
 
     def send(self, request_params=None):
         """Crafting request and send it"""
@@ -45,7 +47,4 @@ class jira:
         except Exception as e:
             print("Can't connect to Jira: "+str(e))
 
-    def get_tickets(self):
-        data = self.send()
-        import pprint
-        pprint.pprint(data.json())
+

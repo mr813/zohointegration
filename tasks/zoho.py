@@ -1,17 +1,24 @@
-import rethinkdb as rdb
+import rethinkdb as r
 import json
 import requests
 import sys
+import datetime
 
 class zoho_collect_tickets:
 
     def __init__(self, **kwargs):
+
         self.init_zoho(kwargs)
-        self.init_rdb(kwargs)
 
 
     def init_zoho(self, kwargs):
         """Constructor for zoho"""
+
+        self.last_time = datetime.datetime.now() - \
+                datetime.timedelta( \
+                    minutes=kwargs.get('zoho_last_time', 15) \
+                )
+        self.last_time = self.last_time.strftime("%Y-%m-%d %H:%M:%S")
 
         self.zoho_url = "https://support.zoho.com/api/json/"
         self.zoho_portal = kwargs['zoho_portal']
@@ -19,23 +26,7 @@ class zoho_collect_tickets:
         self.zoho_token = kwargs['zoho_token']
 
 
-    def init_rdb(self, kwargs):
-        """Constructor for rethinkdb"""
-
-        self.rdb_host = kwargs['rdb_host']
-        self.rdb_port = kwargs.get('rdb_port', 28015)
-        self.rdb_db = kwargs['rdb_db']
-        self.rdb_table = kwargs['rdb_table']
-
-        rdb.connect(self.rdb_host, self.rdb_port).repl()
-
-        try: # If db or table created, ignore it.
-            rdb.db_create(self.rdb_db).run()
-            rdb.db(self.rdb_db).table_create(self.rdb_table).run()
-        except Exception as e:
-            pass
-
-    def send(self, request_params=None):
+    def send(self, url, request_params=None):
         """Crafting request and send it"""
 
         params = {}
@@ -43,6 +34,7 @@ class zoho_collect_tickets:
             'portal'    : self.zoho_portal,
             'department': self.zoho_department,
             'authtoken' : self.zoho_token,
+            'scope'     : 'crmapi',
             'newFormat' : 2,
         })
 
@@ -50,13 +42,20 @@ class zoho_collect_tickets:
             params.update(request_params)
 
         try:
-            return requests.get(self.zoho_url+"requests/getrecords", params=params)
+            return requests.get(self.zoho_url+url, params=params)
         except Exception as e:
-            print("Can't connect to Zoho: "+str(e))
+            logger.error("Can't connect to Zoho: "+str(e))
+            sys.exit(1)
 
-    def get_tickets(self):
-        """Iterate through all zoho tickets"""
 
-        data = self.send()
-        import pprint
-        pprint.pprint(data.json())
+    def get_all_tickets(self):
+        """Get all Zoho tickets"""
+        return self.send('cases/getrecords')
+
+
+    def get_recent_tickets(self):
+        """Get recently updated tickets"""
+        print(self.last_time)
+        return self.send('cases/getrecords', \
+                {'lastModifiedTime': self.last_time})
+
