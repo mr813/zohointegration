@@ -24,7 +24,6 @@ class jira:
 
 
         # Construct URL - hardcoding project name, because it's invalid GET parameter
-        url = self.jira_url+url+"?jql=project="+self.jira_project
         auth=HTTPBasicAuth(self.jira_user, self.jira_password)
 
         # Send request
@@ -38,14 +37,15 @@ class jira:
                 if(request_params):
                     params.update(request_params)
 
+                url = self.jira_url+url+"?jql=project="+self.jira_project
                 return requests.get(url, params=params, auth=auth)
 
             if method=='post':
 
                 # Jira wants json plain text body
-                headers = {'Content-type': 'application/json; charset=utf-8'}
-                print(json.dumps(request_params))
-                return requests.post(url, params=json.dumps(request_params), auth=auth, headers=headers)
+                url = self.jira_url+url
+                headers = {'Content-type': 'application/json'}
+                return requests.post(url, data=json.dumps(request_params), auth=auth, headers=headers)
 
             print('Wtf method is that?')
             sys.exit()
@@ -86,7 +86,8 @@ class jira:
         data = {
             "fields" : {
                 "project": {
-                    "key": self.jira_project_key
+                    "key": self.jira_project_key,
+                    "name": self.jira_project
                 },
                 "summary": kwargs['summary'],
                 "description": kwargs['description'],

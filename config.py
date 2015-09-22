@@ -25,7 +25,7 @@ jira_password='regulated2015'
 jira_project='test'
 
 # Jira project key name
-jira_project_key='TEST-1'
+jira_project_key='TEST'
 
 # RethinkDB
 r_host='rethinkdb'

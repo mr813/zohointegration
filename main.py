@@ -59,21 +59,26 @@ class zoho_to_jira:
     def save_tickets(self, data):
         """Save Zoho tickets to DB, replace if needed"""
 
-        logger_info = "Ticket ID [" + data[key]['no'] + "]: "
-        logger.info(logger_info + "Saving ticket to database...")
+        if len(data) == 2:
+            logger_info = "Ticket ID [" + data['no'] + "]: "
+            logger.info(logger_info + "Saving ticket to database...")
+            data = [data]  # required for the loop
+        else:
+            logger.info('Saving all zoho tickets to database...')
+
 
         for key, val in enumerate(data):        # Rename 'no' field to 'id' for nosql db
             data[key]['id'] = data[key]['no']   # so it would be overriden/updated when
             data[key].pop('no', None)           # inserting same dictionary
 
+
         try:
-            logger.info('Saving all zoho tickets to db...')
             output = r.db(self.r_db).table(self.r_table_zoho)    \
                     .insert(data, conflict="replace")   \
                     .run()
             logger.info('RethinkDB output: '+str(output))
         except Exception as e:
-            logger.error('Failed to save all tickets to database! '+str(e))
+            logger.error('Failed to save ticket/s to database! '+str(e))
             sys.exit(1)
 
 
@@ -127,9 +132,16 @@ class zoho_to_jira:
         )
 
         if int(result.status_code) is not int(201):
-            print(result.text)
-            logger.error("Creating ticket failed!!! Response code: "+str(result.status_code))
+            logger.error("Creating ticket failed!!! \n\nResponse status code: "+str(result.status_code) +\
+                    "\n\nResponse url: \n\n" + str(result.url) + \
+                    "\n\nResponse request method: " + str(result.request.method) + \
+                    "\n\nResponse request headers: \n\n" + str(result.request.headers) + \
+                    "\n\nResponse headers: \n\n" + str(result.headers) + \
+                    "\n\nResponse text: \n\n" + str(result.text)
+            )
             sys.exit(1)
+        else:
+            logger.info(logger_info + "Ticket created!")
 
 
 
@@ -147,29 +159,28 @@ class zoho_to_jira:
         if not first_time_sync:
 
             for key, val in enumerate(data):
+                logger_info = "Ticket ID [" + data[key]['no'] + "]: "
+                logger.info(logger_info + "Checking if exists in DB...")
 
-                    logger_info = "Ticket ID [" + data[key]['no'] + "]: "
-                    logger.info(logger_info + "Checking if exists in DB...")
-
-                    result = r.db(self.r_db).table(self.r_table_zoho).filter({
-                        "id" : str(data[key]['no']) #<--- MUST BE STRING!
-                    }).run()
+                result = r.db(self.r_db).table(self.r_table_zoho).filter({
+                    "id" : str(data[key]['no']) #<--- MUST BE STRING!
+                }).run()
 
 
-                    if not len(list(result)): # If ticket not found...
-                        logger.info(logger_info + "Not found! Creating ticket in Jira...")
+                if not len(list(result)): # If ticket not found...
+                    logger.info(logger_info + "Not found! Creating ticket in Jira...")
 
-                        self.jira_create_ticket(data, data[key]['no'])
-                        self.save_tickets(data)
+                    self.jira_create_ticket(data[key], data[key]['no'])
+                    self.save_tickets(data[key])
 
-                    else:
-                        # TODO: Update ticket in Jira
-                        logger.info("Ticket ID ["+data[key]['no']+"]: Found! Skipping...")
-                        pass
+                else:
+                    # TODO: Update ticket in Jira
+                    logger.info("Ticket ID ["+data[key]['no']+"]: Found! Skipping...")
+                    pass
 
         else:
+            # For the first time start
             for ticket in data:
-
                 self.jira_create_ticket(ticket, ticket['no'])
                 self.save_tickets(ticket)
 
