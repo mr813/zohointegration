@@ -1,5 +1,7 @@
 import sys
 import json
+import requests
+from requests.auth import HTTPBasicAuth
 
 class jira:
 
@@ -14,20 +16,12 @@ class jira:
         self.jira_url = "https://icucsolutions.atlassian.net/rest/api/2/"
         self.jira_user =  kwargs['jira_user']
         self.jira_password = kwargs['jira_password']
-        self.jira_project = kwargs.get('jira_project', 'test')
-        self.jira_project_key = kwargs.get('jira_project_key', 'TEST-1')
+        self.jira_project = kwargs['jira_project']
+        self.jira_project_key = kwargs['jira_project_key']
 
     def send(self, url, request_params=None, method='get'):
         """Crafting request and send it"""
 
-        # TODO: Some default params in here if needed
-        # TODO: BE CAREFULL WITH POST PARAMS, still not sure how that's gonna work \
-        #       Jira seems to be wants full dictionary in their own structure, so be carefull
-        params = {}
-
-        # Append provided parameters to default param dict
-        if(request_params):
-            params.update(request_params)
 
         # Construct URL - hardcoding project name, because it's invalid GET parameter
         url = self.jira_url+url+"?jql=project="+self.jira_project
@@ -36,10 +30,22 @@ class jira:
         # Send request
         try:
 
-            if method=='get': # Sorry I just don't want to use eval()
+            if method=='get':
+
+                params = {}
+
+                # Append provided parameters to default param dict
+                if(request_params):
+                    params.update(request_params)
+
                 return requests.get(url, params=params, auth=auth)
+
             if method=='post':
-                return requests.post(url, params=params, auth=auth)
+
+                # Jira wants json plain text body
+                headers = {'Content-type': 'application/json; charset=utf-8'}
+                print(json.dumps(request_params))
+                return requests.post(url, params=json.dumps(request_params), auth=auth, headers=headers)
 
             print('Wtf method is that?')
             sys.exit()
@@ -90,7 +96,6 @@ class jira:
             }
         }
 
-        self.send('issue', data, 'post')
+        return self.send('issue', data, 'post')
 
-        pass
 

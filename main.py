@@ -11,31 +11,15 @@ logger = logging.getLogger(__name__)
 
 import zoho
 import jira
+import config
 
 class zoho_to_jira:
 
     def __init__(self, **kwargs):
 
         self.init_r(kwargs)
-        self.init_zoho(kwargs)
-        self.init_jira(kwargs)
-
-    def init_zoho(self, kwargs):
-        self.zoho = zoho.zoho_collect_tickets(
-            zoho_portal='icontrolusa',
-            zoho_department='SBT-Client Services',
-            zoho_token='5e32980f1c7513f0f6dcc9247d21f37a',
-            zoho_last_time=300
-        )
-
-
-    def init_jira(self, kwargs):
-        """Constructor for Jira"""
-        self.jira = jira.jira(
-            jira_user='mark.lopez',
-            jira_password='regulated2015',
-            jira_project='test'
-        )
+        self.zoho = zoho.zoho_collect_tickets(**kwargs)
+        self.jira = jira.jira(**kwargs)
 
     def init_r(self, kwargs):
         """Constructor for rethinkdb"""
@@ -72,10 +56,11 @@ class zoho_to_jira:
             logger.warning('Table '+self.r_table_jira+' already created!')
 
 
-    def save_all_tickets(self, data):
-        """Save all Zoho ticket to DB, replace if needed"""
+    def save_tickets(self, data):
+        """Save Zoho tickets to DB, replace if needed"""
 
-        data = data.json()['response']['result']['Cases']['row']
+        logger_info = "Ticket ID [" + data[key]['no'] + "]: "
+        logger.info(logger_info + "Saving ticket to database...")
 
         for key, val in enumerate(data):        # Rename 'no' field to 'id' for nosql db
             data[key]['id'] = data[key]['no']   # so it would be overriden/updated when
@@ -89,16 +74,105 @@ class zoho_to_jira:
             logger.info('RethinkDB output: '+str(output))
         except Exception as e:
             logger.error('Failed to save all tickets to database! '+str(e))
+            sys.exit(1)
 
 
-    def sync_jira(self):
-        """Sync data to Jira"""
-        logger.info("Syncing data to Jira")
+    def zoho_data_strip(self, data):
+        """Get rid of trash in JSON result of Zoho"""
+        return data.json()['response']['result']['Cases']['row']
 
-        # Let's check do we have any zoho tickets added
-        # if so, skip them for now
 
-        pass
+    def zoho_proper_dict(self, data):
+        """Convert Zoho response to proper dictionary
+
+           data - Zoho stripped data from cycle
+        """
+        proper_dict = {}
+        for row in data['fl']:
+            proper_dict[ row['val'] ] = row['content']
+
+        return proper_dict
+
+
+    def jira_create_ticket(self, data, ticket_id):
+        """Call Jira client to create ticket
+
+        That how zoho proper dict looks like:
+
+        {
+            'CONTACTID': '91932000000561155',
+            'Ticket Id': '625',
+            'Due Date': '2015-09-23 22:00:00',
+            'Email': 'null',
+            'Subject': 'qwewewewe',
+            'URI': '/support/icontrolusa/ShowHomePage.do#Cases/dv/42488da48da23d8e137ba6c977c6cdddf3148ec5bcd90913',
+            'Department': 'SBT-Client Services',
+            'DEP_ID': '91932000000284673',
+            'Request Id': '625',
+            'CASEID': '91932000000561157',
+            'Contact Name': 'mak lopez'
+        }
+
+        """
+
+        logger_info = "Ticket ID [" + ticket_id + "]: "
+        logger.info(logger_info + "Crafting proper dictionary for Jira...")
+        data = self.zoho_proper_dict(data)
+
+        logger.info(logger_info + "Creating ticket in Jira...")
+        result = self.jira.create_ticket(
+            summary=data['Subject'],
+            description="Zoho ticket nr: "+data['Ticket Id'],
+            issuetype="IT Help"
+        )
+
+        if int(result.status_code) is not int(201):
+            print(result.text)
+            logger.error("Creating ticket failed!!! Response code: "+str(result.status_code))
+            sys.exit(1)
+
+
+
+    def sync_jira(self, data, first_time_sync=False):
+        """Sync data to Jira
+
+           first_time_sync - parameters which specified that it's first time synhronization
+                             no ticket will be checked on jira, you must start from fresh project!
+        """
+        logger.info("Syncing data to Jira...")
+
+        # Let's check do we have any zoho tickets added, if so, skip them for now
+        data = self.zoho_data_strip(data)
+
+        if not first_time_sync:
+
+            for key, val in enumerate(data):
+
+                    logger_info = "Ticket ID [" + data[key]['no'] + "]: "
+                    logger.info(logger_info + "Checking if exists in DB...")
+
+                    result = r.db(self.r_db).table(self.r_table_zoho).filter({
+                        "id" : str(data[key]['no']) #<--- MUST BE STRING!
+                    }).run()
+
+
+                    if not len(list(result)): # If ticket not found...
+                        logger.info(logger_info + "Not found! Creating ticket in Jira...")
+
+                        self.jira_create_ticket(data, data[key]['no'])
+                        self.save_tickets(data)
+
+                    else:
+                        # TODO: Update ticket in Jira
+                        logger.info("Ticket ID ["+data[key]['no']+"]: Found! Skipping...")
+                        pass
+
+        else:
+            for ticket in data:
+
+                self.jira_create_ticket(ticket, ticket['no'])
+                self.save_tickets(ticket)
+
 
     def run(self):
         """Main workflow method"""
@@ -116,24 +190,36 @@ class zoho_to_jira:
 
             logger.info('Getting recent zoho tickets...')
             data = self.zoho.get_recent_tickets()
+
             try:
                 if data.json()['response']['error']['code'] == 4832:
                     logger.info('Nothing to sync :}')
-            except:
+                    sys.exit()
+
+            except KeyError:
                 logger.info('There new data to sync :}')
-                self.save_all_tickets(data)
-                self.sync_jira()
+                self.sync_jira(data)
 
         else:
             logger.info('Seems to be table is empty, fetching all zoho tickets...')
             data = self.zoho.get_all_tickets()
-            self.save_all_tickets(data)
-            self.sync_jira()
+            self.sync_jira(data, True)
+
 
 ztoj = zoho_to_jira(
-    r_host='rethinkdb',
-    r_db='zohotojira',
-    r_table_zoho='zoho',
-    r_table_jira='jira'
+    r_host=config.r_host,
+    r_db=config.r_db,
+    r_table_zoho=config.r_table_zoho,
+    r_table_jira=config.r_table_jira,
+
+    jira_user = config.jira_user,
+    jira_password = config.jira_password,
+    jira_project = config.jira_project,
+    jira_project_key = config.jira_project_key,
+
+    zoho_portal = config.zoho_portal,
+    zoho_department = config.zoho_department,
+    zoho_token = config.zoho_token,
+    zoho_last_time =  config.zoho_last_time
 )
 ztoj.run()
