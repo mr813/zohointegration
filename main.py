@@ -34,6 +34,7 @@ class zoho_to_jira:
         self.jira = jira.jira(
             jira_user='mark.lopez',
             jira_password='regulated2015',
+            jira_project='test'
         )
 
     def init_r(self, kwargs):
@@ -93,6 +94,9 @@ class zoho_to_jira:
     def sync_jira(self):
         """Sync data to Jira"""
         logger.info("Syncing data to Jira")
+
+        # Let's check do we have any zoho tickets added
+        # if so, skip them for now
 
         pass
 
