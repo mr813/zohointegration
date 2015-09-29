@@ -16,7 +16,7 @@ class zoho_collect_tickets:
 
         self.last_time = datetime.datetime.now() - \
                 datetime.timedelta( \
-                    minutes=kwargs.get('zoho_last_time', 15) \
+                    minutes=kwargs.get('zoho_last_time', 5000) \
                 )
         self.last_time = self.last_time.strftime("%Y-%m-%d %H:%M:%S")
 
