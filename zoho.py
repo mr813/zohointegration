@@ -59,3 +59,5 @@ class zoho_collect_tickets:
         return self.send('cases/getrecords', \
                 {'lastmodifiedtime': self.last_time})
 
+    def change_ticket_status(self, id, status):
+        pass

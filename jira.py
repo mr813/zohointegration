@@ -1,7 +1,15 @@
 import sys
 import json
+import math
 import requests
 from requests.auth import HTTPBasicAuth
+
+import logging
+logging.basicConfig( \
+        format='[%(levelname)8s] [%(asctime)s] [%(name)s] %(message)s', \
+        level=logging.INFO \
+)
+logger = logging.getLogger(__name__)
 
 class jira:
 
@@ -54,6 +62,7 @@ class jira:
             print("Can't connect to Jira: "+str(e))
             sys.exit()
 
+
     def search_tickets(self):
         """Search for tickets only with summary field"""
 
@@ -62,6 +71,42 @@ class jira:
         }
 
         return self.send("search", params)
+
+
+    def get_all_tickets(self):
+        """Get all jira tickets"""
+
+        logger.info("Get all jira tickets...")
+
+        collected_issues = []
+
+        params = {
+            'fields': 'status'
+        }
+
+        result = self.send("search", params).json()
+
+        # Pagination
+        if result['total'] > result['maxResults']:
+            logger.info("Pagination detected...")
+
+            collected_issues.extend(result['issues'])       # Append first page to collection
+            pages = result['total'] / result['maxResults']  # Get total page number
+            pages = int(math.ceil(pages))                   # Rounding to upper number
+
+            for i in range(1, pages):                       # Iterate through pages
+                logger.info("Getting page "+str(i))
+                params = {
+                    'fields': 'status',
+                    'startAt': (result['maxResults']*1)+1   # Start from 51th record, then 101
+                }
+                collected_issues.extend( \
+                    self.send('search', params).json()['issues']
+                )
+            return collected_issues
+
+        return result['issues']
+
 
     def create_ticket(self, **kwargs):
         """Create jira ticket
