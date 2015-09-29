@@ -95,7 +95,7 @@ class jira:
             pages = int(math.ceil(pages))                   # Rounding to upper number
 
             for i in range(1, pages):                       # Iterate through pages
-                logger.info("Getting page "+str(i))
+                logger.info("Getting page "+str(i+1))
                 params = {
                     'fields': 'status',
                     'startAt': (result['maxResults']*1)+1   # Start from 51th record, then 101
