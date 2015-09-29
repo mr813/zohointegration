@@ -152,7 +152,6 @@ class zoho_to_jira:
                              no ticket will be checked on jira, you must start from fresh project!
         """
         logger.info("Syncing data to Jira...")
-
         # Let's check do we have any zoho tickets added, if so, skip them for now
         data = self.zoho_data_strip(data)
 
@@ -179,7 +178,11 @@ class zoho_to_jira:
                     pass
 
         else:
-            # For the first time start
+            # This is zoho bug fix, when only one ticket returned
+            # they give it as single dictionary
+            if type(data) is dict:
+                data = [data]
+
             for ticket in data:
                 self.jira_create_ticket(ticket, ticket['no'])
                 self.save_tickets(ticket)
