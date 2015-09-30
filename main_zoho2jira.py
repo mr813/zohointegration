@@ -129,7 +129,7 @@ class zoho_to_jira:
 
         logger.info(logger_info + "Creating ticket in Jira...")
         result = self.jira.create_ticket(
-            summary=data['Subject']+" [ZOHO#"+ticket_id+"]",
+            summary=data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
             description="Zoho ticket nr: "+data['Ticket Id'],
             issuetype="IT Help"
         )
