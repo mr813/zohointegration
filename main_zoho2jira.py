@@ -13,6 +13,8 @@ import zoho
 import jira
 import config
 
+logger.info('Starting zoho2jira...')
+
 class zoho_to_jira:
 
     def __init__(self, **kwargs):
@@ -63,18 +65,12 @@ class zoho_to_jira:
     def save_tickets(self, data):
         """Save Zoho tickets to DB, replace if needed"""
 
-        if len(data) == 2:
-            logger_info = "Ticket ID [" + data['no'] + "]: "
-            logger.info(logger_info + "Saving ticket to database...")
-            data = [data]  # required for the loop
-        else:
-            logger.info('Saving all zoho tickets to database...')
+        logger_info = "Ticket ID [" + data['Ticket Id'] + "]: "
+        logger.info(logger_info + "Saving ticket to database...")
+        data = [data]  # required for the loop
 
-
-        for key, val in enumerate(data):        # Rename 'no' field to 'id' for nosql db
-            data[key]['id'] = data[key]['no']   # so it would be overriden/updated when
-            data[key].pop('no', None)           # inserting same dictionary
-
+        for key, val in enumerate(data):               # Rename 'no' field to 'id' for nosql db
+            data[key]['id'] = data[key]['Ticket Id']   # so it would be overriden/updated when
 
         try:
             output = r.db(self.r_db).table(self.r_table_zoho)    \
@@ -103,7 +99,7 @@ class zoho_to_jira:
         return proper_dict
 
 
-    def jira_create_ticket(self, data, ticket_id):
+    def jira_create_ticket(self, data):
         """Call Jira client to create ticket
 
         That how zoho proper dict looks like:
@@ -124,10 +120,7 @@ class zoho_to_jira:
 
         """
 
-        logger_info = "Ticket ID [" + ticket_id + "]: "
-        logger.info(logger_info + "Crafting proper dictionary for Jira...")
-        data = self.zoho_proper_dict(data)
-
+        logger_info = "Ticket ID [" + data['Ticket Id'] + "]: "
         logger.info(logger_info + "Creating ticket in Jira...")
         result = self.jira.create_ticket(
             summary=data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
@@ -148,7 +141,13 @@ class zoho_to_jira:
         else:
             logger.info(logger_info + "Ticket created!")
 
+    def zoho_bug_fix(self, data):
+        """ This is zoho bug fix, when only one ticket returned they give it as single dictionary """
 
+        if type(data) is dict:
+            data = [data]
+
+        return data
 
     def sync_jira(self, data, first_time_sync=False):
         """Sync data to Jira
@@ -157,39 +156,39 @@ class zoho_to_jira:
                              no ticket will be checked on jira, you must start from fresh project!
         """
         logger.info("Syncing data to Jira...")
+
         # Let's check do we have any zoho tickets added, if so, skip them for now
         data = self.zoho_data_strip(data)
+        data = self.zoho_bug_fix(data)
 
         if not first_time_sync:
 
             for key, val in enumerate(data):
-                logger_info = "Ticket ID [" + data[key]['no'] + "]: "
+                data[key] = self.zoho_proper_dict(data[key])
+                logger_info = "Ticket ID [" + data[key]['Ticket Id'] + "]: "
                 logger.info(logger_info + "Checking if exists in DB...")
 
                 result = r.db(self.r_db).table(self.r_table_zoho).filter({
-                    "id" : str(data[key]['no']) #<--- MUST BE STRING!
+                    "id" : str(data[key]['Ticket Id']) #<--- MUST BE STRING!
                 }).run()
 
 
                 if not len(list(result)): # If ticket not found...
                     logger.info(logger_info + "Not found! Creating ticket in Jira...")
 
-                    self.jira_create_ticket(data[key], data[key]['no'])
+                    self.jira_create_ticket(data[key])
                     self.save_tickets(data[key])
 
                 else:
                     # TODO: Update ticket in Jira
-                    logger.info("Ticket ID ["+data[key]['no']+"]: Found! Skipping...")
+                    logger.info("Ticket ID ["+data[key]['Ticket Id']+"]: Found! Skipping...")
                     pass
 
         else:
-            # This is zoho bug fix, when only one ticket returned
-            # they give it as single dictionary
-            if type(data) is dict:
-                data = [data]
 
             for ticket in data:
-                self.jira_create_ticket(ticket, ticket['no'])
+                ticket = self.zoho_proper_dict(ticket)
+                self.jira_create_ticket(ticket)
                 self.save_tickets(ticket)
 
 
@@ -222,6 +221,14 @@ class zoho_to_jira:
         else:
             logger.info('Seems to be table is empty, fetching all zoho tickets...')
             data = self.zoho.get_all_tickets()
+            sys.exit()
+            try:
+                if data.json()['response']['error']['code'] == 4832:
+                    logger.error("Zoho project doesn't have any tickets")
+                    sys.exit()
+            except KeyError:
+                pass
+
             self.sync_jira(data, True)
 
 
