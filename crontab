@@ -1,7 +1,2 @@
-#!/bin/bash
-
-ZOHO_DEPARTMENT=IT
-ZOHO_LAST_TIME=5000
-JIRA_PROJECT=ZSE
-
-*/5 * * * * root /usr/local/bin/python /var/www/zohoint/main_zoho2jira.py 
+SHELL=/bin/bash
+*/5 * * * * root . /var/www/zohoint/env.sh; /usr/local/bin/python /var/www/zohoint/main_zoho2jira.py > /var/log/cron.log
