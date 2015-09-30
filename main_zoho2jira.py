@@ -221,7 +221,7 @@ class zoho_to_jira:
         else:
             logger.info('Seems to be table is empty, fetching all zoho tickets...')
             data = self.zoho.get_all_tickets()
-            sys.exit()
+            
             try:
                 if data.json()['response']['error']['code'] == 4832:
                     logger.error("Zoho project doesn't have any tickets")
