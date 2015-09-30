@@ -20,6 +20,7 @@ class zoho_to_jira:
         logger.info('Jira project: ' + kwargs['jira_project'])
         logger.info('Zoho portal: ' + kwargs['zoho_portal'])
 
+        self.zoho_domain = kwargs['zoho_domain']
         self.init_r(kwargs)
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
         self.jira = jira.jira(**kwargs)
@@ -131,7 +132,7 @@ class zoho_to_jira:
         result = self.jira.create_ticket(
             summary=data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
             description = "Zoho TicketID: " + data['Ticket Id'] + \
-                        "\nZoho TicketURL: " + data['URI'],
+                        "\nZoho TicketURL: "+ self.zoho_domain + data['URI'],
             issuetype="IT Help"
         )
 
@@ -238,6 +239,7 @@ ztoj = zoho_to_jira(
     zoho_portal = config.zoho_portal,
     zoho_department = config.zoho_department,
     zoho_token = config.zoho_token,
-    zoho_last_time =  config.zoho_last_time
+    zoho_last_time =  config.zoho_last_time,
+    zoho_domain = config.zoho_domain
 )
 ztoj.run()

@@ -12,7 +12,9 @@ zoho_department = 'IT'
 zoho_token = '5e32980f1c7513f0f6dcc9247d21f37a'
 
 # Zoho last ticket update seconds ago
-zoho_last_time = int(12000) # 20 minutes
+zoho_last_time = int(60) # 1 minutes
+# Zoho domain
+zoho_domain = 'https://support.zoho.com'
 
 # Jira
 
