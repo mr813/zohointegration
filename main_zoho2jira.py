@@ -17,8 +17,8 @@ class zoho_to_jira:
 
     def __init__(self, **kwargs):
         # Some debug info
-        logger.info('Jira project: ' + self.jira_project)
-        logger.info('Zoho portal: ' + self.zoho_portal)
+        logger.info('Jira project: ' + kwargs['jira_project'])
+        logger.info('Zoho portal: ' + kwargs['zoho_portal'])
 
         self.init_r(kwargs)
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
