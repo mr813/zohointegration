@@ -25,10 +25,10 @@ jira_user = 'mark.lopez'
 jira_password = 'regulated2015'
 
 # Jira project name
-jira_project = 'ISD'
+jira_project = 'HRMY'
 
 # Jira project key name
-jira_project_key = 'ISD'
+jira_project_key = 'HRMY'
 
 # RethinkDB
 r_host = 'rethinkdb'
