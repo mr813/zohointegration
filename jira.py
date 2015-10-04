@@ -138,10 +138,10 @@ class jira:
                 "description": kwargs['description'],
                 "issuetype": {
                     "name": kwargs['issuetype'],
-                }
+                },
+                "components": kwargs['components'],
+                "customfield_10300": kwargs['customfield_10300']
             }
         }
 
         return self.send('issue', data, 'post')
-
-

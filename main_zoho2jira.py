@@ -9,9 +9,11 @@ logging.basicConfig( \
 )
 logger = logging.getLogger(__name__)
 
+
+import config
+import rdb
 import zoho
 import jira
-import config
 
 logger.info('Starting zoho2jira...')
 
@@ -22,45 +24,20 @@ class zoho_to_jira:
         logger.info('Jira project: ' + kwargs['jira_project'])
         logger.info('Zoho portal: ' + kwargs['zoho_portal'])
 
+        # DB data
+        self.r_host = kwargs['r_host']
+        self.r_db = kwargs['r_db']
+        self.r_table_jira = kwargs['r_table_jira']
+        self.r_table_zoho = kwargs['r_table_zoho']
+
+        # API data
         self.zoho_domain = kwargs['zoho_domain']
-        self.init_r(kwargs)
+        self.jira_issue_type = kwargs['jira_issue_type']
+        self.jira_components = kwargs['jira_components']
+        self.jira_customfield_10300 = kwargs['jira_customfield_10300']
+
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
         self.jira = jira.jira(**kwargs)
-
-    def init_r(self, kwargs):
-        """Constructor for rethinkdb"""
-
-        self.r_host = kwargs['r_host']
-        self.r_port = kwargs.get('r_port', 28015)
-        self.r_db = kwargs.get('r_db', 'jira')
-        self.r_table_zoho = kwargs.get('r_table_zoho', 'zoho')
-        self.r_table_jira = kwargs.get('r_table_jira', 'jira')
-
-        try: # Quit if couldn't connect to db
-            logger.info('Connecting to rethinkdb...')
-            r.connect(self.r_host, self.r_port).repl()
-        except Exception as e:
-            logger.error('Connecting to rethinkdb failed! '+str(e))
-            sys.exit(1)
-
-        try: # If db or table created, ignore it.
-            logger.info('Creating database...')
-            r.db_create(self.r_db).run()
-        except:
-            logger.warning('Database already created')
-
-        try:
-            logger.info('Creating table '+self.r_table_zoho)
-            r.db(self.r_db).table_create(self.r_table_zoho).run()
-        except:
-            logger.warning('Table '+self.r_table_zoho+' already created!')
-
-        try:
-            logger.info('Creating table '+self.r_table_jira)
-            r.db(self.r_db).table_create(self.r_table_jira).run()
-        except:
-            logger.warning('Table '+self.r_table_jira+' already created!')
-
 
     def save_tickets(self, data):
         """Save Zoho tickets to DB, replace if needed"""
@@ -123,10 +100,12 @@ class zoho_to_jira:
         logger_info = "Ticket ID [" + data['Ticket Id'] + "]: "
         logger.info(logger_info + "Creating ticket in Jira...")
         result = self.jira.create_ticket(
-            summary=data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
-            description = "Zoho TicketID: " + data['Ticket Id'] + \
-                        "\nZoho TicketURL: "+ self.zoho_domain + data['URI'],
-            issuetype="IT Help"
+            summary           =  data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
+            description       = "Zoho TicketID: " + data['Ticket Id'] + \
+                                    "\nZoho TicketURL: "+ self.zoho_domain + data['URI'],
+            issuetype         = self.jira_issue_type,
+            components        = self.jira_components,
+            customfield_10300 = self.jira_customfield_10300
         )
 
         if int(result.status_code) is not int(201):
@@ -221,7 +200,7 @@ class zoho_to_jira:
         else:
             logger.info('Seems to be table is empty, fetching all zoho tickets...')
             data = self.zoho.get_all_tickets()
-            
+
             try:
                 if data.json()['response']['error']['code'] == 4832:
                     logger.error("Zoho project doesn't have any tickets")
@@ -230,6 +209,14 @@ class zoho_to_jira:
                 pass
 
             self.sync_jira(data, True)
+
+
+
+db = rdb.rdb(
+    r_host=config.r_host,
+    r_db=config.r_db,
+    r_tables = config.r_tables
+)
 
 
 ztoj = zoho_to_jira(
@@ -242,6 +229,9 @@ ztoj = zoho_to_jira(
     jira_password = config.jira_password,
     jira_project = config.jira_project,
     jira_project_key = config.jira_project_key,
+    jira_issue_type = config.jira_issue_type,
+    jira_components = config.jira_components,
+    jira_customfield_10300 = config.jira_customfield_10300,
 
     zoho_portal = config.zoho_portal,
     zoho_department = config.zoho_department,

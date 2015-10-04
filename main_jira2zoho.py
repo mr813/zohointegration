@@ -22,6 +22,12 @@ class jira_to_zoho:
         logger.info('Jira project: ' + self.jira_project)
         logger.info('Zoho portal: ' + self.zoho_portal)
 
+        self.r_host = kwargs['r_host']
+        self.r_db = kwargs['r_db']
+        self.r_tables = kwargs['r_tables']
+        self.r_table_jira = kwargs['r_table_jira']
+        self.r_table_jira = kwargs['r_table_zoho']
+
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
         self.jira = jira.jira(**kwargs)
 
@@ -62,7 +68,7 @@ class jira_to_zoho:
 
     def jira_first_time_sync(self, data):
         """First time syncing from jira to DB"""
-        
+
         for ticket in data:
             # Get ID of Zoho ticket
             output = r.db(self.r_db).table(self.r_table_zoho) \
