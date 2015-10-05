@@ -149,5 +149,3 @@ class jira:
         }
 
         return self.send('issue', data, 'post')
-
-

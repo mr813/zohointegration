@@ -25,10 +25,19 @@ jira_user = 'mark.lopez'
 jira_password = 'regulated2015'
 
 # Jira project name
-jira_project = 'HRMY'
+jira_project = 'Harmony'
 
 # Jira project key name
 jira_project_key = 'HRMY'
+
+# Jira "Issue type" field
+jira_issue_type = 'New Feature'
+
+# Jira "Component" field
+jira_components = [{'id': '10406', 'name': 'SBT' }]
+
+# Jira "Request Source" field
+jira_customfield_10300 = {'id': '10200', 'value': 'Internal' }
 
 # RethinkDB
 r_host = 'rethinkdb'
