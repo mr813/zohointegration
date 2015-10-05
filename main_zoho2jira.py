@@ -126,7 +126,9 @@ class zoho_to_jira:
             summary=data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
             description = "Zoho TicketID: " + data['Ticket Id'] + \
                         "\nZoho TicketURL: "+ self.zoho_domain + data['URI'],
-            issuetype="IT Help"
+            issuetype="Bug",
+            customfield_10302="10300",
+            customfield_10300="10202"
         )
 
         if int(result.status_code) is not int(201):
