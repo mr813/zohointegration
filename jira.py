@@ -135,12 +135,16 @@ class jira:
                     "name": self.jira_project
                 },
                 "summary": kwargs['summary'],
+                "customfield_10302": {
+                    "id": kwargs['customfield_10302'],
+                },
+                "customfield_10300": {
+                    "id": kwargs['customfield_10300'],
+                },
                 "description": kwargs['description'],
                 "issuetype": {
                     "name": kwargs['issuetype'],
-                },
-                "components": kwargs['components'],
-                "customfield_10300": kwargs['customfield_10300']
+                }
             }
         }
 

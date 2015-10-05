@@ -100,13 +100,13 @@ class zoho_to_jira:
         logger_info = "Ticket ID [" + data['Ticket Id'] + "]: "
         logger.info(logger_info + "Creating ticket in Jira...")
         result = self.jira.create_ticket(
-            summary           =  data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
-            description       = "Zoho TicketID: " + data['Ticket Id'] + \
-                                    "\nZoho TicketURL: "+ self.zoho_domain + data['URI'],
-            issuetype         = self.jira_issue_type,
-            components        = self.jira_components,
-            customfield_10300 = self.jira_customfield_10300
-        )
+            summary=data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
+            description = "Zoho TicketID: " + data['Ticket Id'] + \
+                        "\nZoho TicketURL: "+ self.zoho_domain + data['URI'],
+            issuetype="Bug",
+            customfield_10302="10300",
+            customfield_10300="10202"
+
 
         if int(result.status_code) is not int(201):
             logger.error("Creating ticket failed!!! \n\nResponse status code: "+str(result.status_code) +\
