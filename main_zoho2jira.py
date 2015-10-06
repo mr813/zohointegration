@@ -9,8 +9,11 @@ logging.basicConfig( \
 )
 logger = logging.getLogger(__name__)
 
+try:
+    import config
+except ImportError:
+    loggger.error("You need to execute run.sh first!")
 
-import config
 import rdb
 import zoho
 import jira
@@ -24,17 +27,10 @@ class zoho_to_jira:
         logger.info('Jira project: ' + kwargs['jira_project'])
         logger.info('Zoho portal: ' + kwargs['zoho_portal'])
 
-        # DB data
-        self.r_host = kwargs['r_host']
-        self.r_db = kwargs['r_db']
-        self.r_table_jira = kwargs['r_table_jira']
-        self.r_table_zoho = kwargs['r_table_zoho']
-
-        # API data
-        self.zoho_domain = kwargs['zoho_domain']
-        self.jira_issue_type = kwargs['jira_issue_type']
-        self.jira_components = kwargs['jira_components']
-        self.jira_customfield_10300 = kwargs['jira_customfield_10300']
+        # Copy kwargs to self
+        # Available variables:  r_host, r_db, r_table_jira, r_table_zoho
+        #                       zoho_portal, zoho_department, zoho_token, last_time, zoho_domain
+        self.__dict__.update(kwargs)
 
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
         self.jira = jira.jira(**kwargs)
@@ -99,22 +95,21 @@ class zoho_to_jira:
 
         logger_info = "Ticket ID [" + data['Ticket Id'] + "]: "
         logger.info(logger_info + "Creating ticket in Jira...")
-        result = self.jira.create_ticket(
-            summary=data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]",
-            description = "Zoho TicketID: " + data['Ticket Id'] + \
-                        "\nZoho TicketURL: "+ self.zoho_domain + data['URI'],
-            issuetype="Bug",
-            customfield_10302="10300",
-            customfield_10300="10202"
 
+        # Append summary and description fields to jira_dict
+        self.jira_dict['fields']['summary'] = data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]"
+        self.jira_dict['fields']['description'] =  "Zoho TicketID: " + data['Ticket Id'] + \
+                                                 "\nZoho TicketURL: " + self.zoho_domain + data['URI']
+
+        result = self.jira.create_ticket(self.jira_dict)
 
         if int(result.status_code) is not int(201):
             logger.error("Creating ticket failed!!! \n\nResponse status code: "+str(result.status_code) +\
-                    "\n\nResponse url: \n\n" + str(result.url) + \
-                    "\n\nResponse request method: " + str(result.request.method) + \
-                    "\n\nResponse request headers: \n\n" + str(result.request.headers) + \
-                    "\n\nResponse headers: \n\n" + str(result.headers) + \
-                    "\n\nResponse text: \n\n" + str(result.text)
+                    "\n\n" + "Response url: \n\n" + str(result.url) + \
+                    "\n\n" + "Response request method: " + str(result.request.method) + \
+                    "\n\n" + "Response request headers: \n\n" + str(result.request.headers) + \
+                    "\n\n" + "Response headers: \n\n" + str(result.headers) + \
+                    "\n\n" + "Response text: \n\n" + str(result.text)
             )
             sys.exit(1)
         else:
@@ -229,9 +224,7 @@ ztoj = zoho_to_jira(
     jira_password = config.jira_password,
     jira_project = config.jira_project,
     jira_project_key = config.jira_project_key,
-    jira_issue_type = config.jira_issue_type,
-    jira_components = config.jira_components,
-    jira_customfield_10300 = config.jira_customfield_10300,
+    jira_dict = config.jira_dict,
 
     zoho_portal = config.zoho_portal,
     zoho_department = config.zoho_department,

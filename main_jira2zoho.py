@@ -22,11 +22,11 @@ class jira_to_zoho:
         logger.info('Jira project: ' + self.jira_project)
         logger.info('Zoho portal: ' + self.zoho_portal)
 
-        self.r_host = kwargs['r_host']
-        self.r_db = kwargs['r_db']
-        self.r_tables = kwargs['r_tables']
-        self.r_table_jira = kwargs['r_table_jira']
-        self.r_table_jira = kwargs['r_table_zoho']
+        # Copy kwargs to self
+        # Available variables: r_host, r_db, r_tables, r_table_jira, r_table_zoho,
+        #                      jira_user, jira_password, jira_project, jira_project_key,
+        #                      zoho_portal, zoho_department, zoho_token, zoho_last_time,
+        self.__dict__.update(kwargs)
 
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
         self.jira = jira.jira(**kwargs)
@@ -169,10 +169,6 @@ db = rdb.rdb(
 )
 
 ztoj = jira_to_zoho(
-
-    r_host=config.r_host,
-    r_db=config.r_db,
-    r_tables = config.r_tables
 
     jira_user = config.jira_user,
     jira_password = config.jira_password,

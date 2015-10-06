@@ -22,10 +22,10 @@ class jira:
         """Constructor for Jira"""
 
         self.jira_url = "https://icucsolutions.atlassian.net/rest/api/2/"
-        self.jira_user =  kwargs['jira_user']
-        self.jira_password = kwargs['jira_password']
-        self.jira_project = kwargs['jira_project']
-        self.jira_project_key = kwargs['jira_project_key']
+
+        # Copy kwargs to self
+        # Available variables: jira_user, jira_password, jira_project, jira_project_key, jira_dict
+        self.__dict__.update(kwargs)
 
     def send(self, url, request_params=None, method='get'):
         """Crafting request and send it"""
@@ -108,7 +108,7 @@ class jira:
         return result['issues']
 
 
-    def create_ticket(self, **kwargs):
+    def create_ticket(self, jira_dict):
         """Create jira ticket
 
         https://developer.atlassian.com/jiradev/jira-apis/jira-rest-apis/jira-rest-api-tutorials/jira-rest-api-example-create-issue
@@ -127,25 +127,5 @@ class jira:
            }
         }
         """
+        return self.send('issue', jira_dict, 'post')
 
-        data = {
-            "fields" : {
-                "project": {
-                    "key": self.jira_project_key,
-                    "name": self.jira_project
-                },
-                "summary": kwargs['summary'],
-                "customfield_10302": {
-                    "id": kwargs['customfield_10302'],
-                },
-                "customfield_10300": {
-                    "id": kwargs['customfield_10300'],
-                },
-                "description": kwargs['description'],
-                "issuetype": {
-                    "name": kwargs['issuetype'],
-                }
-            }
-        }
-
-        return self.send('issue', data, 'post')

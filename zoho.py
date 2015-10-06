@@ -4,26 +4,32 @@ import requests
 import sys
 import datetime
 
+import logging
+logging.basicConfig( \
+        format='[%(levelname)8s] [%(asctime)s] [%(name)s] %(message)s', \
+        level=logging.INFO \
+)
+logger = logging.getLogger(__name__)
+
 class zoho_collect_tickets:
 
     def __init__(self, **kwargs):
+
+        # Copy kwargs to self
+        # Available variables: zoho_portal, zoho_department, zoho_token, last_time
+        self.__dict__.update(kwargs)
 
         self.init_zoho(kwargs)
 
 
     def init_zoho(self, kwargs):
         """Constructor for zoho"""
-
+        self.zoho_url = "https://support.zoho.com/api/json/"
         self.last_time = datetime.datetime.now() - \
                 datetime.timedelta( \
                     minutes=kwargs.get('zoho_last_time', 5000) \
                 )
         self.last_time = self.last_time.strftime("%Y-%m-%d %H:%M:%S")
-
-        self.zoho_url = "https://support.zoho.com/api/json/"
-        self.zoho_portal = kwargs['zoho_portal']
-        self.zoho_department = kwargs['zoho_department']
-        self.zoho_token = kwargs['zoho_token']
 
 
     def send(self, url, request_params=None):
@@ -61,3 +67,5 @@ class zoho_collect_tickets:
 
     def change_ticket_status(self, id, status):
         pass
+
+

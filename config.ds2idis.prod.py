@@ -30,18 +30,26 @@ jira_project = 'IT Desktop & Infrastructure Support'
 # Jira project key name
 jira_project_key = 'IDIS'
 
-# Jira "Issue type" field
-jira_issue_type = 'New Feature'
-
-# Jira "Component" field
-jira_components = [{'id': '10406', 'name': 'SBT' }]
-
-# Jira "Request Source" field
-jira_customfield_10300 = {'id': '10200', 'value': 'Internal' }
+# Jira dictionary which will be used to create tickets. 
+# This dict follow format of jira API documentation. 
+# Check jira.py for details.
+# Field "summary" and "description" of the keys will
+# be added in jira.py because it contains Zoho ticket ID.
+jira_dict = {
+    "fields" : {
+        "project": {
+            "key": jira_project_key,
+            "name": jira_project
+        },
+        "issuetype": {
+            "name": "New Feature"
+        },
+    }
+}
 
 # RethinkDB
 r_host = 'rethinkdb'
 r_db = 'zohotojira'
-r_table_zoho = 'zoho'
-r_table_jira ='jira'
-r_tables = ['zoho', 'jira']
+r_table_zoho = 'zoho_ds2idis'
+r_table_jira ='jira_ds2idis'
+r_tables = [r_table_zoho, r_table_jira]

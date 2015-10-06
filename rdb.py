@@ -11,19 +11,30 @@ logger = logging.getLogger(__name__)
 class rdb:
 
     def __init__(self, **kwargs):
-        self.r_host = kwargs['r_host']
-        self.r_port = kwargs.get('r_port', 28015)
-        self.r_db = kwargs.get('r_db', 'jira')
-        self.r_tables = kwargs['r_tables']
 
-        self.init_connection(kwargs)
+        # Copy kwargs to self
+        # Available variables: r_host, r_post, r_db, r_tables
+        self.__dict__.update(kwargs)
+
+        self.init_defaults()
+        self.init_connection()
         self.create_database(self.r_db)
         self.create_tables(self.r_tables)
 
         pass
 
+    def init_defaults(self):
 
-    def init_connection(self, kwargs):
+        # Set default port
+        try:
+            self.r_port
+        except AttributeError:
+            self.r_port = 28015
+
+
+
+
+    def init_connection(self):
 
         try: # Quit if couldn't connect to db
             logger.info('Connecting to rethinkdb...')
