@@ -35,6 +35,10 @@ class zoho_to_jira:
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
         self.jira = jira.jira(**kwargs)
 
+    def jira_to_db(self):
+        """Dump all jira tickets to DB"""
+        pass
+
     def save_tickets(self, data):
         """Save Zoho tickets to DB, replace if needed"""
 
@@ -158,7 +162,8 @@ class zoho_to_jira:
                     logger.info("Ticket ID ["+data[key]['Ticket Id']+"]: Found! Skipping...")
                     pass
 
-        else:
+        else: # First time sync
+            self.jira_to_db() # Dump all jira tickets to DB, required for checking duplicates
 
             for ticket in data:
                 ticket = self.zoho_proper_dict(ticket)
