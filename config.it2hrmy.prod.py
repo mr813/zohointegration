@@ -58,4 +58,4 @@ r_host = 'rethinkdb'
 r_db = 'zohotojira'
 r_table_zoho = 'zoho_it2hrmy'
 r_table_jira ='jira_it2hrmy'
-r_tables = ['zoho', 'jira']
+r_tables = [r_table_zoho, r_table_jira]
