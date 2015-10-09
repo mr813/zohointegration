@@ -44,9 +44,9 @@ jira_dict = {
         "issuetype": {
             "name": "Bug"
         },
-        "customfield_10302": {
-            "id": "10300"
-        },
+        "customfield_10401": [ {
+            "id": "10406"
+        } ],
         "customfield_10300": {
             "id": "10202"
         }
