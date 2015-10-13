@@ -35,9 +35,27 @@ class zoho_to_jira:
         self.zoho = zoho.zoho_collect_tickets(**kwargs)
         self.jira = jira.jira(**kwargs)
 
-    def jira_to_db(self):
-        """Dump all jira tickets to DB"""
-        pass
+    def jira_ticket_to_db(self):
+        """Dump all jira tickets (or single one) to DB"""
+
+        data = self.jira.get_all_tickets()
+        output = r.db(self.r_db).table(self.r_table_jira) \
+                .insert(data, conflict="replace") \
+                .run()
+        logger.info("RethinkDB output: " + str(output))
+
+
+    def jira_check_duplicate(self, zoho_ticket_id):
+        """Check if tickets been created earlier"""
+        logger.info("Checking ticket #" + zoho_ticket_id + " for duplicate")
+        output = r.db(self.r_db).table(self.r_table_jira) \
+                .filter( lambda row: row['fields']['summary'].match("\[ZOHO\#" + zoho_ticket_id + "\]")) \
+                .run()
+        if len(output.items):
+            return True
+
+        return False
+
 
     def save_tickets(self, data):
         """Save Zoho tickets to DB, replace if needed"""
@@ -154,6 +172,9 @@ class zoho_to_jira:
                 if not len(list(result)): # If ticket not found...
                     logger.info(logger_info + "Not found! Creating ticket in Jira...")
 
+                    if self.jira_check_duplicate(data[key]['Ticket Id']):
+                        logger.warning('Duplicate found! Skipping...')
+                        continue
                     self.jira_create_ticket(data[key])
                     self.save_tickets(data[key])
 
@@ -163,10 +184,15 @@ class zoho_to_jira:
                     pass
 
         else: # First time sync
-            self.jira_to_db() # Dump all jira tickets to DB, required for checking duplicates
+
+            logger.info("Dumping all jira tickets to DB")
+            self.jira_ticket_to_db() # Dump all jira tickets to DB, required for checking duplicates
 
             for ticket in data:
                 ticket = self.zoho_proper_dict(ticket)
+                if self.jira_check_duplicate(ticket['Ticket Id']):
+                    logger.warning('Duplicate found! Skipping...')
+                    continue
                 self.jira_create_ticket(ticket)
                 self.save_tickets(ticket)
 

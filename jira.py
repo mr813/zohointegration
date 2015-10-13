@@ -45,7 +45,7 @@ class jira:
                 if(request_params):
                     params.update(request_params)
 
-                url = self.jira_url+url+"?jql=project="+self.jira_project
+                url = self.jira_url+url+"?jql=project="+self.jira_project_key
                 return requests.get(url, params=params, auth=auth)
 
             if method=='post':
@@ -67,7 +67,7 @@ class jira:
         """Search for tickets only with summary field"""
 
         params = {
-            'fields': 'summary'
+            'fields': 'id,summary'
         }
 
         return self.send("search", params)
@@ -81,7 +81,7 @@ class jira:
         collected_issues = []
 
         params = {
-            'fields': 'status'
+            'fields': 'id,summary'
         }
 
         result = self.send("search", params).json()
@@ -96,10 +96,7 @@ class jira:
 
             for i in range(1, pages):                       # Iterate through pages
                 logger.info("Getting page "+str(i+1))
-                params = {
-                    'fields': 'status',
-                    'startAt': (result['maxResults']*1)+1   # Start from 51th record, then 101
-                }
+                params['startAt'] = (result['maxResults']*1)+1   # Start from 51th record, then 101
                 collected_issues.extend( \
                     self.send('search', params).json()['issues']
                 )
