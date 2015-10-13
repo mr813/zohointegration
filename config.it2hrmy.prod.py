@@ -25,7 +25,7 @@ jira_user = 'mark.lopez'
 jira_password = 'regulated2015'
 
 # Jira project name
-jira_project = 'Harmony'
+jira_project = 'Engineering-R&D'
 
 # Jira project key name
 jira_project_key = 'HRMY'
