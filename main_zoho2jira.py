@@ -136,6 +136,12 @@ class zoho_to_jira:
             sys.exit(1)
         else:
             logger.info(logger_info + "Ticket created!")
+            return result.json()
+
+    def zoho_ticket_subject_update(self, caseid, jiraid, subject):
+        """Update zoho ticket subject after jira ticket is created"""
+        logger.info("Updating zoho ticket...")
+        self.zoho.update_ticket_subject(caseid, jiraid, subject)
 
     def zoho_bug_fix(self, data):
         """ This is zoho bug fix, when only one ticket returned they give it as single dictionary """
@@ -193,7 +199,8 @@ class zoho_to_jira:
                 if self.jira_check_duplicate(ticket['Ticket Id']):
                     logger.warning('Duplicate found! Skipping...')
                     continue
-                self.jira_create_ticket(ticket)
+                jiraticket = self.jira_create_ticket(ticket)
+                self.zoho_ticket_subject_update(ticket['CASEID'], jiraticket['key'], ticket['Subject'])
                 self.save_tickets(ticket)
 
 

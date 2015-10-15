@@ -54,6 +54,27 @@ class zoho_collect_tickets:
             logger.error("Can't connect to Zoho: "+str(e))
             sys.exit(1)
 
+    def update_ticket_subject(self, caseid, jiraid, subject):
+        """Updates Zoho ticket subject"""
+
+        xmldata = """
+            <cases>
+            <row no="1">
+                <fl val="Subject">%s [JIRA#%s]</fl>
+                <fl val="CASEID">%s</fl>
+            </row>
+            </requests>
+        """ % (subject, jiraid, caseid)
+
+        params = {
+            "id" : id,
+            "xml": xmldata
+        }
+
+        result = self.send("cases/updaterecords", params)
+        print(result.text)
+        sys.exit()
+
 
     def get_all_tickets(self):
         """Get all Zoho tickets"""
