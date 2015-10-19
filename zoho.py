@@ -56,24 +56,15 @@ class zoho_collect_tickets:
 
     def update_ticket_subject(self, caseid, jiraid, subject):
         """Updates Zoho ticket subject"""
-
-        xmldata = """
-            <cases>
-            <row no="1">
-                <fl val="Subject">%s [JIRA#%s]</fl>
-                <fl val="CASEID">%s</fl>
-            </row>
-            </requests>
-        """ % (subject, jiraid, caseid)
-
+        xmldata = '<cases><row no="1"><fl val="Subject">%s [JIRA#%s]</fl><fl val="CASEID">%s</fl></row></cases>' % (subject, jiraid['key'], caseid)
+        print(xmldata)
         params = {
-            "id" : id,
+            "id" : caseid,
             "xml": xmldata
         }
 
         result = self.send("cases/updaterecords", params)
-        print(result.text)
-        sys.exit()
+        logger.info("Zoho ticket subject update result: "+ result.text)
 
 
     def get_all_tickets(self):

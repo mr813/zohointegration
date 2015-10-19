@@ -1,6 +1,5 @@
 import rethinkdb as r
-import json
-import sys
+import json, sys, re
 
 import logging
 logging.basicConfig( \
@@ -47,7 +46,7 @@ class zoho_to_jira:
 
     def jira_check_duplicate(self, zoho_ticket_id):
         """Check if tickets been created earlier"""
-        logger.info("Checking ticket #" + zoho_ticket_id + " for duplicate")
+        logger.info("Ticket ID ["+zoho_ticket_id+"]: Checking ticket #" + zoho_ticket_id + " for duplicate")
         output = r.db(self.r_db).table(self.r_table_jira) \
                 .filter( lambda row: row['fields']['summary'].match("\[ZOHO\#" + zoho_ticket_id + "\]")) \
                 .run()
@@ -118,6 +117,10 @@ class zoho_to_jira:
         logger_info = "Ticket ID [" + data['Ticket Id'] + "]: "
         logger.info(logger_info + "Creating ticket in Jira...")
 
+        # Prepare subject for jira ticket subject
+        data['Subject'] = self.zoho_ticket_subject_clear(data['Subject'])
+        data['Subject'] = self.zoho_ticket_subject_truncate(data['Subject'])
+
         # Append summary and description fields to jira_dict
         self.jira_dict['fields']['summary'] = data['Subject'] + " [ZOHO#" + data['Ticket Id'] + "]"
         self.jira_dict['fields']['description'] =  "Zoho TicketID: " + data['Ticket Id'] + \
@@ -138,9 +141,28 @@ class zoho_to_jira:
             logger.info(logger_info + "Ticket created!")
             return result.json()
 
+    def zoho_ticket_subject_clear(self, subject):
+        """Find a previous jira tag and remove it."""
+
+        try:
+            subj_match = re.findall(r'\[JIRA.*\]', subject)[0]
+            subject = subject.replace(subj_match, '').rstrip()
+        except:
+            pass
+
+        return subject
+
+    def zoho_ticket_subject_truncate(self, subject):
+        """Truncate subject if it's more than 240 chars, rest will be used for ticket id's."""
+        return subject[:230] + (subject[230:] and '..')
+
     def zoho_ticket_subject_update(self, caseid, jiraid, subject):
         """Update zoho ticket subject after jira ticket is created"""
         logger.info("Updating zoho ticket...")
+
+        subject = self.zoho_ticket_subject_clear(subject)
+        subject = self.zoho_ticket_subject_truncate(subject)
+
         self.zoho.update_ticket_subject(caseid, jiraid, subject)
 
     def zoho_bug_fix(self, data):
@@ -181,7 +203,9 @@ class zoho_to_jira:
                     if self.jira_check_duplicate(data[key]['Ticket Id']):
                         logger.warning('Duplicate found! Skipping...')
                         continue
-                    self.jira_create_ticket(data[key])
+
+                    jira_ticket = self.jira_create_ticket(data[key])
+                    self.zoho_ticket_subject_update( data[key]['CASEID'], jira_ticket, data[key]['Subject']  )
                     self.save_tickets(data[key])
 
                 else:
@@ -199,8 +223,8 @@ class zoho_to_jira:
                 if self.jira_check_duplicate(ticket['Ticket Id']):
                     logger.warning('Duplicate found! Skipping...')
                     continue
-                jiraticket = self.jira_create_ticket(ticket)
-                self.zoho_ticket_subject_update(ticket['CASEID'], jiraticket['key'], ticket['Subject'])
+                jira_ticket = self.jira_create_ticket(ticket)
+                self.zoho_ticket_subject_update(ticket['CASEID'], jira_ticket, ticket['Subject'])
                 self.save_tickets(ticket)
 
 

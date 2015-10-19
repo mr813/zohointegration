@@ -6,7 +6,7 @@ import os
 zoho_portal = 'icontrolusa'
 
 # Zoho department name
-zoho_department = 'IT'
+zoho_department = 'Sample Department'
 
 # Zoho token
 zoho_token = '5e32980f1c7513f0f6dcc9247d21f37a'
