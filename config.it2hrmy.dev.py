@@ -1,4 +1,7 @@
-import os
+import os, time
+
+# Set the timezone!!
+os.environ['TZ'] = 'America/New_York'
 
 # Zoho
 
