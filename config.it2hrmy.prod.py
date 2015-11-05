@@ -19,7 +19,7 @@ zoho_domain = 'https://support.zoho.com'
 # Jira
 
 # Jira user
-jira_user = 'mark.lopez'
+jira_user = 'ZohoTicketMover'
 
 # Jira password
 jira_password = 'regulated2015'
