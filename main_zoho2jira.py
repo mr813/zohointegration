@@ -235,9 +235,11 @@ class zoho_to_jira:
         # Ignoring exception in here, as it's the only way to check
         # if table is empty without count() which is terribly slow!
         try:
-            r.db(self.r_db).table(self.r_table_zoho).nth(0).run()
+            r.db(self.r_db).table(self.r_table_jira).nth(0).run()
+            logger.debug('Found populated table.. resuming sync..')
             result = 1
         except:
+            logger.debug('Table is empty, preparing for first time sync...')
             result = None
 
         if result is not None:
@@ -254,7 +256,7 @@ class zoho_to_jira:
                 logger.info('There new data to sync :}')
                 self.sync_jira(data)
 
-        else:
+        else: # first time sync
             logger.info('Seems to be table is empty, fetching all zoho tickets...')
             data = self.zoho.get_all_tickets()
 
