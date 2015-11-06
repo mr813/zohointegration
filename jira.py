@@ -7,7 +7,7 @@ from requests.auth import HTTPBasicAuth
 import logging
 logging.basicConfig( \
         format='[%(levelname)8s] [%(asctime)s] [%(name)s] %(message)s', \
-        level=logging.INFO \
+        level=logging.DEBUG \
 )
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,10 @@ class jira:
         # Copy kwargs to self
         # Available variables: jira_user, jira_password, jira_project, jira_project_key, jira_dict
         self.__dict__.update(kwargs)
+
+    def send_debug(self, result):
+        """Dump debug info about sent request to logger"""
+        logger.debug("Response url: " + str(result.url))
 
     def send(self, url, request_params=None, method='get'):
         """Crafting request and send it"""
@@ -46,7 +50,9 @@ class jira:
                     params.update(request_params)
 
                 url = self.jira_url+url+"?jql=project="+self.jira_project_key
-                return requests.get(url, params=params, auth=auth)
+                result = requests.get(url, params=params, auth=auth)
+                self.send_debug(result)
+                return result
 
             if method=='post':
 
@@ -96,12 +102,13 @@ class jira:
 
             for i in range(1, pages):                       # Iterate through pages
                 logger.info("Getting page "+str(i+1))
-                params['startAt'] = (result['maxResults']*1)+1   # Start from 51th record, then 101
+                params['startAt'] = (result['maxResults']*i)+1   # Start from 51th record, then 101
                 collected_issues.extend( \
                     self.send('search', params).json()['issues']
                 )
             return collected_issues
 
+        logger.debug("Got " + str(len(result['issues'])) + " tickets from jira")
         return result['issues']
 
 
