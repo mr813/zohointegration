@@ -100,9 +100,10 @@ class jira:
             pages = result['total'] / result['maxResults']  # Get total page number
             pages = int(math.ceil(pages))                   # Rounding to upper number
 
-            for i in range(1, pages):                       # Iterate through pages
+            for i in range(1, pages):                      # Iterate through pages
                 logger.info("Getting page "+str(i+1))
-                params['startAt'] = (result['maxResults']*i)+1   # Start from 51th record, then 101
+                params['startAt'] = (result['maxResults']*i)
+
                 collected_issues.extend( \
                     self.send('search', params).json()['issues']
                 )
