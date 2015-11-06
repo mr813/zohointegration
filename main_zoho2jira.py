@@ -4,7 +4,7 @@ import json, sys, re
 import logging
 logging.basicConfig( \
         format='[%(levelname)8s] [%(asctime)s] [%(name)s] %(message)s', \
-        level=logging.INFO \
+        level=logging.DEBUG \
 )
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class zoho_to_jira:
         """Check if tickets been created earlier"""
         logger.info("Ticket ID ["+zoho_ticket_id+"]: Checking ticket #" + zoho_ticket_id + " for duplicate")
         output = r.db(self.r_db).table(self.r_table_jira) \
-                .filter( lambda row: row['fields']['summary'].match("\[ZOHO\#" + zoho_ticket_id + "\]")) \
+                .filter( lambda row: row['fields']['summary'].match("\\[ZOHO\#" + zoho_ticket_id + "\\]")) \
                 .run()
         if len(output.items):
             return True
@@ -198,10 +198,10 @@ class zoho_to_jira:
 
 
                 if not len(list(result)): # If ticket not found...
-                    logger.info(logger_info + "Not found! Creating ticket in Jira...")
+                    logger.info(logger_info + "Duplicate not found in Zoho table! Checking in Jira table...")
 
                     if self.jira_check_duplicate(data[key]['Ticket Id']):
-                        logger.warning('Duplicate found! Skipping...')
+                        logger.warning(logger_info + 'Duplicate found in Jira table! Skipping...')
                         continue
 
                     jira_ticket = self.jira_create_ticket(data[key])
@@ -210,7 +210,7 @@ class zoho_to_jira:
 
                 else:
                     # TODO: Update ticket in Jira
-                    logger.info("Ticket ID ["+data[key]['Ticket Id']+"]: Found! Skipping...")
+                    logger.warning("Ticket ID ["+data[key]['Ticket Id']+"]: Duplicate found in Zoho table! Skipping...")
                     pass
 
         else: # First time sync
